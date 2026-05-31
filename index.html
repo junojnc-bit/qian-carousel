@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>錢的說明書 — Carousel Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans TC', system-ui, sans-serif; background: #fafaf9; color: #1a1a1a; min-height: 100vh; }
+
+/* HEADER */
+.header { background: #0d0d0d; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.header-left h1 { font-size: 15px; font-weight: 700; color: #fff; }
+.header-left p { font-size: 9px; color: rgba(255,255,255,0.35); margin-top: 1px; }
+.header-badge { font-size: 9px; font-weight: 600; color: #c9a84c; background: rgba(201,168,76,0.12); padding: 4px 10px; border-radius: 20px; }
+
+/* LAYOUT */
+.container { max-width: 480px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+/* BOX */
+.box { background: #fff; border-radius: 12px; border: 0.5px solid #ebebeb; padding: 14px; }
+.box-label { font-size: 9px; font-weight: 700; color: #aaa; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+
+/* API KEY */
+.api-row { display: flex; gap: 8px; align-items: center; }
+.api-input { flex: 1; border: 0.5px solid #e0e0e0; border-radius: 8px; padding: 8px 12px; font-size: 12px; outline: none; background: #fafaf9; font-family: inherit; letter-spacing: 0.05em; }
+.api-input:focus { border-color: #0d0d0d; }
+.api-save { background: #0d0d0d; color: #fff; border: none; border-radius: 8px; padding: 8px 14px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.api-note { font-size: 10px; color: #aaa; margin-top: 6px; line-height: 1.5; }
+.api-status { font-size: 10px; margin-top: 5px; font-weight: 600; }
+
+/* AI INPUT */
+.ai-row { display: flex; gap: 8px; }
+.topic-input { flex: 1; border: 0.5px solid #e0e0e0; border-radius: 8px; padding: 10px 13px; font-size: 13px; outline: none; background: #fafaf9; font-family: inherit; }
+.topic-input:focus { border-color: #0d0d0d; }
+.gen-btn { background: #0d0d0d; color: #fff; border: none; border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; font-family: inherit; transition: opacity 0.15s; }
+.gen-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ai-status { font-size: 11px; color: #c9a84c; margin-top: 7px; text-align: center; min-height: 18px; }
+
+/* THEME */
+.theme-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.theme-pill { font-size: 10px; font-weight: 600; padding: 6px 11px; border-radius: 20px; border: 0.5px solid #e0e0e0; background: #fff; cursor: pointer; transition: all 0.15s; line-height: 1.3; text-align: center; font-family: inherit; }
+
+/* STRIP */
+.strip-wrap { overflow-x: auto; padding-bottom: 4px; }
+.strip-wrap::-webkit-scrollbar { height: 3px; }
+.strip-wrap::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+.strip { display: flex; gap: 8px; scroll-snap-type: x mandatory; width: max-content; }
+.slide-thumb { flex-shrink: 0; width: 130px; height: 173px; border-radius: 9px; padding: 10px 10px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; scroll-snap-align: start; transition: transform 0.15s, box-shadow 0.15s; }
+.slide-thumb:hover { transform: scale(1.02); }
+.th-num { font-size: 8px; font-weight: 600; letter-spacing: 0.05em; }
+.th-body { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.th-tag { font-size: 7px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 6px; border-radius: 20px; display: inline-block; margin-bottom: 5px; align-self: flex-start; }
+.th-line { width: 13px; height: 2px; border-radius: 1px; margin-bottom: 5px; }
+.th-head { font-size: 11px; font-weight: 700; line-height: 1.3; white-space: pre-line; }
+.th-sub { font-size: 8px; line-height: 1.5; margin-top: 4px; white-space: pre-line; }
+.th-foot { font-size: 7px; font-weight: 600; }
+.th-cta { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; text-align: center; }
+.th-cta-main { font-size: 11px; font-weight: 700; line-height: 1.35; }
+.th-cta-btn { font-size: 7px; font-weight: 700; border-radius: 20px; padding: 3px 9px; }
+
+/* EDITOR */
+.editor-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.nav-btns { display: flex; gap: 5px; }
+.nav-btn { font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 0.5px solid #e0e0e0; background: transparent; cursor: pointer; font-family: inherit; }
+.nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.copy-slide-btn { font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 6px; border: 0.5px solid #0d0d0d; background: transparent; color: #0d0d0d; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.copy-slide-btn.done { background: #0d0d0d; color: #fff; }
+
+/* LARGE PREVIEW */
+.slide-preview { width: 100%; aspect-ratio: 1080/1350; border-radius: 12px; padding: 7% 8%; display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 14px; box-shadow: 0 4px 24px rgba(0,0,0,0.18); }
+.sp-num { font-size: 2.2%; font-weight: 600; }
+.sp-body { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.sp-tag { font-size: 2%; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.7% 2.8%; border-radius: 40px; display: inline-block; margin-bottom: 2.5%; align-self: flex-start; }
+.sp-line { width: 5%; height: 0.4%; border-radius: 1px; margin-bottom: 2.8%; }
+.sp-head { font-size: 6.8%; font-weight: 700; line-height: 1.3; white-space: pre-line; }
+.sp-sub { font-size: 2.8%; line-height: 1.6; margin-top: 2.5%; white-space: pre-line; }
+.sp-foot { font-size: 2%; font-weight: 600; }
+
+/* FIELDS */
+.field { margin-bottom: 12px; }
+.field-label { font-size: 9px; font-weight: 700; color: #aaa; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+.field input, .field textarea { width: 100%; background: transparent; border: none; border-bottom: 0.5px solid #e8e8e8; padding: 6px 0; font-size: 13px; outline: none; font-family: inherit; color: #1a1a1a; line-height: 1.5; resize: none; }
+.field input:focus, .field textarea:focus { border-bottom-color: #0d0d0d; }
+
+/* ALL TEXT */
+.all-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.all-row { display: grid; grid-template-columns: 52px 1fr; gap: 8px; padding: 7px 0; border-bottom: 0.5px solid #f5f5f5; align-items: start; }
+.all-row:last-child { border-bottom: none; }
+.all-num { font-size: 10px; font-weight: 600; color: #bbb; }
+.all-text { font-size: 11px; color: #333; line-height: 1.6; white-space: pre-line; }
+
+/* CAPTION */
+.cap-text { font-size: 12px; color: #333; line-height: 1.85; white-space: pre-line; background: #fafaf9; border-radius: 8px; padding: 10px 12px; }
+.tag-text { font-size: 11px; color: #888; line-height: 2; }
+.row-between { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.copy-btn { font-size: 11px; font-weight: 700; padding: 5px 13px; border-radius: 6px; border: 1px solid #0d0d0d; background: transparent; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.copy-btn.done { background: #0d0d0d; color: #fff; }
+
+/* FOOTER */
+.footer { text-align: center; padding: 20px; font-size: 10px; color: #ccc; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>錢的說明書</h1>
+    <p>Carousel Generator</p>
+  </div>
+  <div class="header-badge">@the.money.insight</div>
+</div>
+
+<div class="container">
+
+  <!-- API KEY -->
+  <div class="box">
+    <div class="box-label">🔑 API Key 設定（一次性）</div>
+    <div class="api-row">
+      <input class="api-input" id="api-key" type="password" placeholder="sk-ant-api03-...">
+      <button class="api-save" onclick="saveKey()">儲存</button>
+    </div>
+    <div class="api-note">在 <a href="https://console.anthropic.com" target="_blank" style="color:#0d0d0d">console.anthropic.com</a> 取得 API Key。儲存在瀏覽器本地，不會上傳任何地方。</div>
+    <div class="api-status" id="api-status"></div>
+  </div>
+
+  <!-- AI GENERATE -->
+  <div class="box">
+    <div class="box-label">✦ AI 自動生成內容</div>
+    <div class="ai-row">
+      <input class="topic-input" id="topic" placeholder="輸入今天主題，例：台股突破 42,000 點" onkeydown="if(event.key==='Enter')generate()">
+      <button class="gen-btn" id="gen-btn" onclick="generate()">✦ 生成</button>
+    </div>
+    <div class="ai-status" id="ai-status"></div>
+  </div>
+
+  <!-- THEME -->
+  <div class="box">
+    <div class="box-label">主題顏色（週輪替）</div>
+    <div class="theme-row" id="theme-row"></div>
+  </div>
+
+  <!-- STRIP -->
+  <div class="box">
+    <div class="box-label">預覽（點選編輯）</div>
+    <div class="strip-wrap"><div class="strip" id="strip"></div></div>
+  </div>
+
+  <!-- EDITOR -->
+  <div class="box">
+    <div class="editor-nav">
+      <div class="box-label" style="margin:0" id="editor-label">編輯 Slide 1</div>
+      <div class="nav-btns">
+        <button class="nav-btn" id="prev-btn" onclick="nav(-1)">←</button>
+        <button class="nav-btn" id="next-btn" onclick="nav(1)">→</button>
+        <button class="copy-slide-btn" id="copy-slide-btn" onclick="copySlide()">複製</button>
+      </div>
+    </div>
+    <div id="editor"></div>
+  </div>
+
+  <!-- ALL TEXT -->
+  <div class="box">
+    <div class="all-header">
+      <div class="box-label" style="margin:0">全部文字</div>
+      <button class="copy-btn" id="copy-all-btn" onclick="copyAll()">複製全部</button>
+    </div>
+    <div id="all-text"></div>
+  </div>
+
+  <!-- CAPTION -->
+  <div class="box">
+    <div class="row-between">
+      <div class="box-label" style="margin:0">Caption</div>
+      <button class="copy-btn" id="copy-cap-btn" onclick="copyCap()">複製</button>
+    </div>
+    <div class="cap-text" id="cap-text"></div>
+  </div>
+
+  <!-- HASHTAG -->
+  <div class="box">
+    <div class="row-between">
+      <div class="box-label" style="margin:0">Hashtag（15 個）</div>
+      <button class="copy-btn" id="copy-tag-btn" onclick="copyTag()">複製</button>
+    </div>
+    <div class="tag-text">#投資新手 #財經教育 #股票入門 #加密貨幣 #CFD交易<br>#理財規劃 #打工族投資 #錢的說明書 #投資學習 #台股<br>#財經知識 #投資日記 #被動收入 #財務自由 #每日財經</div>
+  </div>
+
+</div>
+
+<div class="footer">錢的說明書 © 2026 · Powered by Claude</div>
+
+<script>
+const THEMES = {
+  bw:     { name:"黑白 Classic",    label:"週一", bg1:"#0d0d0d", bg2:"#f5f5f3", accent:"#c9a84c" },
+  green:  { name:"翠綠 Dark Green", label:"週二", bg1:"#0b1a12", bg2:"#eef6f0", accent:"#4ade80" },
+  cream:  { name:"米白 Cream",      label:"週三", bg1:"#f5f0e8", bg2:"#1a1714", accent:"#b84a2a" },
+  navy:   { name:"深藍 Navy+Gold",  label:"週四", bg1:"#0a1628", bg2:"#f0f4fa", accent:"#c9a84c" },
+  purple: { name:"紫色 Purple",     label:"週五", bg1:"#12092a", bg2:"#f2effa", accent:"#c084fc" },
+};
+
+let theme = "bw", selected = 0;
+let slides = [
+  { tag:"關於這個帳號", headline:"一個打工族\n決定搞懂\n投資這件事", sub:"", foot:"滑動繼續 →", isCover:true },
+  { tag:"我是誰",       headline:"月薪普通\n不想一直打工\n開始研究投資", sub:"跟大多數人一樣\n從什麼都不懂開始", foot:"→" },
+  { tag:"這裡有什麼",   headline:"股票・Crypto\n期貨・CFD\n每天一點點", sub:"把複雜的變簡單\n邊學邊紀錄", foot:"→" },
+  { tag:"這裡沒有什麼", headline:"不給買賣建議\n不保證獲利\n只給你知識", sub:"投資決定永遠是你自己的", foot:"→" },
+  { tag:"發文節奏",     headline:"週一  市場預告\n週三  知識教學\n週五  週報總結", sub:"固定更新，追蹤不錯過", foot:"→" },
+  { tag:"先從這裡開始", headline:"不知道\n從哪裡入門？", sub:"下一篇：\n投資新手最常問的\n5 個問題 →", foot:"最後一張 →" },
+  { isCTA:true },
+];
+
+function getC(i) {
+  const t = THEMES[theme], dark = i%2===0;
+  return {
+    bg: dark?t.bg1:t.bg2, tc: dark?"#fff":t.bg1,
+    muted: dark?"rgba(255,255,255,0.4)":t.bg1+"88",
+    numC:  dark?"rgba(255,255,255,0.28)":t.bg1+"40",
+    footC: dark?"rgba(255,255,255,0.2)":t.bg1+"30",
+    tagBg: dark?"rgba(255,255,255,0.08)":t.bg1+"0f",
+    tagC:  dark?"rgba(255,255,255,0.5)":t.bg1+"88",
+    accC:  dark?"rgba(255,255,255,0.25)":t.bg1+"28",
+    accent:t.accent
+  };
+}
+
+// API KEY
+function saveKey() {
+  const k = document.getElementById('api-key').value.trim();
+  if (!k.startsWith('sk-')) { setStatus('api-status','格式錯誤，需以 sk- 開頭','#e24b4a'); return; }
+  localStorage.setItem('claude_key', k);
+  setStatus('api-status','✓ 已儲存','#1d9e75');
+}
+function loadKey() {
+  const k = localStorage.getItem('claude_key');
+  if (k) { document.getElementById('api-key').value = k; setStatus('api-status','✓ 已載入','#1d9e75'); }
+}
+
+function setStatus(id, msg, color) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.style.color = color;
+}
+
+// THEMES
+function renderThemes() {
+  document.getElementById('theme-row').innerHTML = Object.entries(THEMES).map(([k,t]) => `
+    <button class="theme-pill" onclick="setTheme('${k}')" style="
+      background:${theme===k?t.bg1:'#fff'};
+      color:${theme===k?t.accent:'#666'};
+      border-color:${theme===k?t.accent:'#e0e0e0'}">
+      ${t.name}<br><span style="font-size:8px;opacity:0.6">${t.label}</span>
+    </button>`).join('');
+}
+function setTheme(k) { theme=k; renderThemes(); renderStrip(); renderEditor(); }
+
+// STRIP
+function renderStrip() {
+  document.getElementById('strip').innerHTML = slides.map((s,i) => {
+    const c=getC(i), active=i===selected;
+    const shadow=active?`0 0 0 2.5px ${c.accent}`:'0 1px 5px rgba(0,0,0,0.14)';
+    if(s.isCTA) return `<div class="slide-thumb" onclick="sel(${i})" style="background:${c.bg};box-shadow:${shadow}">
+      <div class="th-num" style="color:${c.numC}">${slides.length}/${slides.length}</div>
+      <div class="th-cta">
+        <div class="th-cta-main" style="color:${c.tc}">一起搞懂<br>投資這件事</div>
+        <div class="th-cta-btn" style="background:${c.tc};color:${c.bg}">追蹤 錢的說明書</div>
+      </div></div>`;
+    return `<div class="slide-thumb" onclick="sel(${i})" style="background:${c.bg};box-shadow:${shadow}">
+      <div class="th-num" style="color:${c.numC}">${i+1}/${slides.length}</div>
+      <div class="th-body">
+        ${s.tag?`<div class="th-tag" style="background:${c.tagBg};color:${c.tagC}">${s.tag}</div>`:''}
+        <div class="th-line" style="background:${c.accC}"></div>
+        <div class="th-head" style="color:${c.tc}">${s.headline||''}</div>
+        ${s.sub?`<div class="th-sub" style="color:${c.muted}">${s.sub}</div>`:''}
+      </div>
+      <div class="th-foot" style="color:${c.footC}">${s.foot||''}</div>
+    </div>`;
+  }).join('');
+}
+
+// EDITOR
+function renderEditor() {
+  const s=slides[selected], c=getC(selected), n=slides.length;
+  document.getElementById('editor-label').textContent=`編輯 Slide ${selected+1}`;
+  document.getElementById('prev-btn').disabled=selected===0;
+  document.getElementById('next-btn').disabled=selected===n-1;
+
+  if(s.isCTA) {
+    document.getElementById('editor').innerHTML=`
+      <div class="slide-preview" style="background:${c.bg};align-items:center;justify-content:center;flex-direction:column;gap:4%;text-align:center">
+        <div style="font-size:6%;font-weight:700;color:${c.tc};line-height:1.4">一起搞懂<br>投資這件事</div>
+        <div style="font-size:2.8%;font-weight:700;background:${c.tc};color:${c.bg};border-radius:40px;padding:1.5% 5%">追蹤 錢的說明書 →</div>
+        <div style="font-size:2%;color:${c.muted}">👇 免費領新手投資工具包</div>
+      </div>
+      <div style="background:#f5f5f0;border-radius:8px;padding:10px;font-size:11px;color:#999;text-align:center">尾卡固定，無需編輯</div>`;
+    return;
+  }
+
+  document.getElementById('editor').innerHTML=`
+    <div class="slide-preview" style="background:${c.bg}" id="big-preview">
+      <div class="sp-num" style="color:${c.numC}">${selected+1}/${n}</div>
+      <div class="sp-body">
+        ${s.tag?`<div class="sp-tag" style="background:${c.tagBg};color:${c.tagC}">${s.tag}</div>`:''}
+        <div class="sp-line" style="background:${c.accC}"></div>
+        <div class="sp-head" style="color:${c.tc}">${s.headline||'<span style="opacity:0.2">標題文字</span>'}</div>
+        ${s.sub?`<div class="sp-sub" style="color:${c.muted}">${s.sub}</div>`:''}
+      </div>
+      <div class="sp-foot" style="color:${c.footC}">${s.foot||''}</div>
+    </div>
+    <div class="field"><div class="field-label">小標籤</div>
+      <input value="${s.tag||''}" oninput="upd('tag',this.value)" placeholder="例：市場分析"></div>
+    <div class="field"><div class="field-label">主標題（Enter 換行）</div>
+      <textarea rows="3" oninput="upd('headline',this.value)" placeholder="每行 6–8 字以內">${s.headline||''}</textarea></div>
+    <div class="field"><div class="field-label">副標題（可空白）</div>
+      <textarea rows="2" oninput="upd('sub',this.value)" placeholder="補充說明">${s.sub||''}</textarea></div>
+    <div class="field"><div class="field-label">底部文字</div>
+      <input value="${s.foot||''}" oninput="upd('foot',this.value)" placeholder="→ 或 滑動繼續 →"></div>`;
+}
+
+function upd(f,v) {
+  slides[selected][f]=v;
+  renderStrip(); renderAllText(); renderCaption();
+  const c=getC(selected), s=slides[selected];
+  const p=document.getElementById('big-preview');
+  if(!p) return;
+  const h=p.querySelector('.sp-head');
+  if(h) h.innerHTML=s.headline||'<span style="opacity:0.2">標題文字</span>';
+  const t=p.querySelector('.sp-tag'); if(t) t.textContent=s.tag||'';
+  const sb=p.querySelector('.sp-sub'); if(sb) sb.innerHTML=s.sub||'';
+  const ft=p.querySelector('.sp-foot'); if(ft) ft.textContent=s.foot||'';
+}
+
+function sel(i) { selected=i; renderStrip(); renderEditor(); }
+function nav(d) { selected=Math.max(0,Math.min(slides.length-1,selected+d)); renderStrip(); renderEditor(); }
+
+// ALL TEXT
+function renderAllText() {
+  document.getElementById('all-text').innerHTML=slides.map((s,i)=>{
+    const txt=s.isCTA?'一起搞懂投資這件事\n追蹤 錢的說明書 →':
+      [s.tag&&`[${s.tag}]`,s.headline,s.sub].filter(Boolean).join('\n');
+    return `<div class="all-row"><div class="all-num">Slide ${i+1}</div>
+      <div class="all-text">${txt.replace(/\n/g,'<br>')}</div></div>`;
+  }).join('');
+}
+
+// CAPTION
+function renderCaption() {
+  const cap=`迷茫打工族的財經投資日記 💡\n\n${slides[0]?.headline?.replace(/\n/g,'、')||''}\n\n每天一點點，把複雜的變簡單。\n不是專家，只是比你早一步開始研究。\n\n👇 追蹤 @the.money.insight 一起搞懂投資\n🎁 點 Bio 連結，免費領新手投資工具包`;
+  document.getElementById('cap-text').textContent=cap;
+}
+
+// COPY
+function markDone(id,orig) {
+  const b=document.getElementById(id);
+  b.textContent='已複製 ✓'; b.classList.add('done');
+  setTimeout(()=>{ b.textContent=orig; b.classList.remove('done'); },2000);
+}
+function copySlide() {
+  const s=slides[selected];
+  const t=s.isCTA?'一起搞懂投資這件事\n追蹤 錢的說明書 →':
+    [s.tag&&`[${s.tag}]`,s.headline,s.sub,s.foot].filter(Boolean).join('\n');
+  navigator.clipboard.writeText(t); markDone('copy-slide-btn','複製');
+}
+function copyAll() {
+  const t=slides.map((s,i)=>{
+    const b=s.isCTA?'一起搞懂投資這件事\n追蹤 錢的說明書 →':
+      [s.tag&&`[${s.tag}]`,s.headline,s.sub,s.foot].filter(Boolean).join('\n');
+    return `=== Slide ${i+1} ===\n${b}`;
+  }).join('\n\n');
+  navigator.clipboard.writeText(t); markDone('copy-all-btn','複製全部');
+}
+function copyCap() { navigator.clipboard.writeText(document.getElementById('cap-text').textContent); markDone('copy-cap-btn','複製'); }
+function copyTag() {
+  navigator.clipboard.writeText('#投資新手 #財經教育 #股票入門 #加密貨幣 #CFD交易\n#理財規劃 #打工族投資 #錢的說明書 #投資學習 #台股\n#財經知識 #投資日記 #被動收入 #財務自由 #每日財經');
+  markDone('copy-tag-btn','複製');
+}
+
+// AI GENERATE
+async function generate() {
+  const apiKey=localStorage.getItem('claude_key');
+  if(!apiKey) { setStatus('ai-status','⚠️ 請先填入並儲存 API Key','#e24b4a'); return; }
+  const topic=document.getElementById('topic').value.trim();
+  if(!topic) return;
+  const btn=document.getElementById('gen-btn');
+  btn.disabled=true; btn.textContent='生成中...';
+  setStatus('ai-status','Claude 正在生成 7 張文案...','#c9a84c');
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:1000,
+        messages:[{role:'user',content:`你是台灣財經教育 Instagram 帳號「錢的說明書」的內容創作者。根據主題生成 6 張 Carousel 文字，繁體中文，語調親切有活力，不給買賣建議。
+
+主題：${topic}
+
+規則：headline 每行最多 8 字，最多 3 行，用\\n換行。sub 最多 2 行可空白。Slide 1 強力 hook，Slide 2–5 每張只說一件事，Slide 6 總結。
+
+只回傳 JSON：
+[{"tag":"xxx","headline":"xxx\\nxxx","sub":"","foot":"滑動繼續 →","isCover":true},{"tag":"xxx","headline":"xxx\\nxxx","sub":"xxx","foot":"→"},{"tag":"xxx","headline":"xxx\\nxxx","sub":"","foot":"→"},{"tag":"xxx","headline":"xxx\\nxxx","sub":"xxx","foot":"→"},{"tag":"xxx","headline":"xxx\\nxxx","sub":"","foot":"→"},{"tag":"xxx","headline":"xxx\\nxxx","sub":"xxx","foot":"最後一張 →"}]`}]
+      })
+    });
+    const data=await res.json();
+    const gen=JSON.parse(data.content[0].text.trim().replace(/```json|```/g,'').trim());
+    slides=[...gen,{isCTA:true}]; selected=0;
+    renderStrip(); renderEditor(); renderAllText(); renderCaption();
+    setStatus('ai-status','✓ 生成完成！請檢查微調後複製到 Canva','#1d9e75');
+  } catch(e) {
+    setStatus('ai-status','生成失敗，請檢查 API Key 或再試一次','#e24b4a');
+  }
+  btn.disabled=false; btn.textContent='✦ 生成';
+}
+
+// INIT
+loadKey(); renderThemes(); renderStrip(); renderEditor(); renderAllText(); renderCaption();
+</script>
+</body>
+</html>
